@@ -1,0 +1,4 @@
+name: Cross-job artifact metadata race
+runs:
+  using: node24
+  main: index.mjs
