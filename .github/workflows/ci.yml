@@ -7,7 +7,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: probe
-        run: |
-          cd "$GITHUB_WORKSPACE"
-          python3 "$GITHUB_WORKSPACE/probe.py"
+        run: python3 probe.py
