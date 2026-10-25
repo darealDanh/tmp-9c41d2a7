@@ -1,0 +1,25 @@
+name: x
+on:
+  workflow_dispatch:
+permissions:
+  actions: write
+  contents: read
+jobs:
+  cross-race:
+    strategy:
+      fail-fast: false
+      max-parallel: 16
+      matrix:
+        index: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --ignore-scripts
+      - uses: ./cross-action
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MATRIX_INDEX: ${{ matrix.index }}
+          MATRIX_TOTAL: '16'
