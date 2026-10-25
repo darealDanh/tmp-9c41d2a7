@@ -1,4 +1,0 @@
-name: migrate
-runs:
-  using: node24
-  main: index.mjs
