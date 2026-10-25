@@ -37,10 +37,11 @@ async function inspect(aid){
  }
  for(let i=0;i<6;i++){
   const name=`t-${i}-${Date.now()}`;
-  const a=await create(name,6,odd); if(a.url) await putRaw(a.url,payload,{'x-ms-blob-type':'BlockBlob','x-ms-blob-content-type':odd,'Content-Length':String(payload.length)});
-  const b=await create(name,7,'application/json'); if(b.url) await putRaw(b.url,payload,{'x-ms-blob-type':'BlockBlob','x-ms-blob-content-type':odd,'Content-Length':String(payload.length)});
-  const f=await finalize(name);
-  const ins=f.id?await inspect(f.id):null;
-  console.log('SEQ',JSON.stringify({i,a:a.status,b:b.status,bmsg:b.msg,f:f.status,id:f.id,ins}));
+  const a=await create(name,7,'application/json'); if(a.url) await putRaw(a.url,payload,{'x-ms-blob-type':'BlockBlob','x-ms-blob-content-type':odd,'Content-Length':String(payload.length)});
+  const b=await create(name,6,odd); if(b.url) await putRaw(b.url,payload,{'x-ms-blob-type':'BlockBlob','x-ms-blob-content-type':odd,'Content-Length':String(payload.length)});
+  const f1=await finalize(name); const f2=await finalize(name);
+  const ids=[...new Set([f1.id,f2.id].filter(Boolean))];
+  const ins=[]; for(const id of ids) ins.push(await inspect(id));
+  console.log('SEQ',JSON.stringify({i,a:a.status,b:b.status,f1:f1.status,f2:f2.status,ids,ins}));
  }
 })();
