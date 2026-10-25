@@ -1,4 +1,0 @@
-name: probe
-runs:
-  using: node24
-  main: index.cjs
