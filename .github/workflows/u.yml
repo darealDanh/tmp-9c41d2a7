@@ -1,0 +1,23 @@
+name: u
+on:
+  workflow_dispatch:
+permissions:
+  actions: write
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN);
+            core.exportVariable('ACTIONS_RESULTS_URL', process.env.ACTIONS_RESULTS_URL);
+            core.exportVariable('ACTIONS_RUNTIME_URL', process.env.ACTIONS_RUNTIME_URL);
+      - run: python3 probe_reuse.py
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: python3 probe_pending.py
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
